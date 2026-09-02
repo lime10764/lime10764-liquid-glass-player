@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liquid Glass Player</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- 背景图：优先仓库同站图片（国内直连），失败则用纯 CSS 渐变兜底 -->
+<div class="bg-image" id="bg-image" aria-hidden="true"></div>
+<div class="bg-orbs" aria-hidden="true">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="orb orb-4"></div>
+</div>
+
+<main class="player-shell">
+
+  <header class="player-header">
+    <h1 class="title">Liquid Glass</h1>
+    <p class="subtitle" id="status-text">Scanning library...</p>
+  </header>
+
+  <section class="cover-section">
+    <div class="vinyl-wrapper">
+      <div class="vinyl" id="vinyl">
+        <div class="vinyl-grooves" aria-hidden="true"></div>
+        <div class="vinyl-label">
+          <div class="vinyl-center"></div>
+        </div>
+      </div>
+      <div class="wave-rings" aria-hidden="true">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="info-section">
+    <h2 class="track-name" id="track-name">No track</h2>
+    <p class="track-artist" id="track-artist">—</p>
+  </section>
+
+  <section class="progress-section">
+    <div class="time-row">
+      <span id="time-current">0:00</span>
+      <span id="time-total">0:00</span>
+    </div>
+    <div class="progress-bar" id="progress-bar">
+      <div class="progress-fill" id="progress-fill"></div>
+      <div class="progress-glow" id="progress-glow"></div>
+    </div>
+  </section>
+
+  <section class="controls-section">
+    <button class="btn btn-secondary" id="btn-shuffle" title="Shuffle">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
+        <polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+        <line x1="4" y1="4" x2="9" y2="9"/>
+      </svg>
+    </button>
+    <button class="btn btn-main" id="btn-prev">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+        <polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    </button>
+    <button class="btn btn-play" id="btn-play">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" id="icon-play">
+        <polygon points="5 3 19 12 5 21 5 3"/>
+      </svg>
+    </button>
+    <button class="btn btn-main" id="btn-next">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+        <polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    </button>
+    <button class="btn btn-secondary" id="btn-loop" title="Loop">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+        <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+      </svg>
+    </button>
+  </section>
+
+  <section class="volume-section">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+    </svg>
+    <div class="volume-bar" id="volume-bar">
+      <div class="volume-fill" id="volume-fill"></div>
+    </div>
+  </section>
+
+  <section class="playlist-section">
+    <div class="playlist-header">
+      <span class="playlist-title">Library</span>
+      <span class="playlist-count" id="playlist-count">0 tracks</span>
+    </div>
+    <div class="playlist" id="playlist"></div>
+  </section>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
