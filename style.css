@@ -31,6 +31,7 @@ body {
   position: relative;
 }
 
+/* ===== 背景 ===== */
 .bg-layer {
   position: fixed;
   inset: 0;
@@ -69,21 +70,18 @@ body {
   top: -120px; left: -120px;
   animation-delay: 0s;
 }
-
 .orb-2 {
   width: 380px; height: 380px;
   background: radial-gradient(circle, rgba(180,120,255,0.35), transparent);
   bottom: -100px; right: -100px;
   animation-delay: -5s;
 }
-
 .orb-3 {
   width: 320px; height: 320px;
   background: radial-gradient(circle, rgba(255,140,180,0.25), transparent);
   top: 40%; left: 60%;
   animation-delay: -10s;
 }
-
 .orb-4 {
   width: 280px; height: 280px;
   background: radial-gradient(circle, rgba(100,255,200,0.2), transparent);
@@ -102,6 +100,7 @@ body.page-hidden .orb {
   animation-play-state: paused;
 }
 
+/* ===== 播放器主体 ===== */
 .player-shell {
   position: relative;
   z-index: 1;
@@ -136,6 +135,7 @@ body.page-hidden .orb {
   letter-spacing: 1px;
 }
 
+/* ===== 黑胶 ===== */
 .cover-section {
   display: flex;
   justify-content: center;
@@ -162,7 +162,6 @@ body.page-hidden .orb {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: animation-play-state 0.3s;
 }
 
 .vinyl::after {
@@ -231,6 +230,7 @@ body.page-hidden .orb {
   100% { transform: scale(1.4); opacity: 0; }
 }
 
+/* ===== 歌曲信息 ===== */
 .info-section {
   text-align: center;
   margin-bottom: 20px;
@@ -251,6 +251,7 @@ body.page-hidden .orb {
   color: var(--text-secondary);
 }
 
+/* ===== 进度条 ===== */
 .progress-section {
   margin-bottom: 24px;
 }
@@ -270,7 +271,7 @@ body.page-hidden .orb {
   border-radius: 2px;
   cursor: pointer;
   position: relative;
-  overflow: visible;
+  touch-action: none;
 }
 
 .progress-fill {
@@ -278,28 +279,14 @@ body.page-hidden .orb {
   background: linear-gradient(90deg, var(--accent), #a78bfa);
   border-radius: 2px;
   width: 0%;
-  position: relative;
-  transition: width 0.1s linear;
+  pointer-events: none;
 }
 
-.progress-glow {
-  position: absolute;
-  right: -4px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 12px;
-  height: 12px;
-  background: var(--accent);
-  border-radius: 50%;
-  box-shadow: 0 0 10px var(--accent-glow);
-  opacity: 0;
-  transition: opacity 0.2s;
+.progress-bar.scrubbing .progress-fill {
+  transition: none;
 }
 
-.progress-bar:hover .progress-glow {
-  opacity: 1;
-}
-
+/* ===== 控制按钮 ===== */
 .controls-section {
   display: flex;
   align-items: center;
@@ -355,6 +342,7 @@ body.page-hidden .orb {
   transform: scale(0.95);
 }
 
+/* ===== 音量 ===== */
 .volume-section {
   display: flex;
   align-items: center;
@@ -375,6 +363,7 @@ body.page-hidden .orb {
   border-radius: 2px;
   cursor: pointer;
   position: relative;
+  touch-action: none;
 }
 
 .volume-fill {
@@ -382,8 +371,14 @@ body.page-hidden .orb {
   background: var(--accent);
   border-radius: 2px;
   width: 80%;
+  pointer-events: none;
 }
 
+.volume-bar.scrubbing .volume-fill {
+  transition: none;
+}
+
+/* ===== 歌单列表 ===== */
 .playlist-section {
   border-top: 1px solid rgba(255,255,255,0.08);
   padding-top: 16px;
@@ -410,9 +405,10 @@ body.page-hidden .orb {
 }
 
 .playlist {
-  max-height: 180px;
+  max-height: 200px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  padding-right: 4px;
 }
 
 .playlist::-webkit-scrollbar {
@@ -431,7 +427,7 @@ body.page-hidden .orb {
   padding: 10px 12px;
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.2s;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -440,7 +436,7 @@ body.page-hidden .orb {
 }
 
 .playlist-item.active {
-  background: rgba(110,198,255,0.1);
+  background: rgba(110, 198, 255, 0.12);
 }
 
 .playlist-item.active .item-name {
@@ -484,6 +480,7 @@ body.page-hidden .orb {
   flex-shrink: 0;
 }
 
+/* ===== 响应式 ===== */
 @media (max-width: 480px) {
   body { padding: 12px; }
   .player-shell { padding: 24px 18px; border-radius: 24px; }
