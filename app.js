@@ -1,13 +1,9 @@
 // ===== CONFIG =====
 const MUSIC_REPO = 'lime10764/music';
 const MUSIC_BRANCH = 'main';
-const CDN_BASE = `https://cdn.jsdelivr.net/gh/${MUSIC_REPO}@${MUSIC_BRANCH}`;
-const JSDLIST_URL = `https://cdn.jsdelivr.net/gh/${MUSIC_REPO}@${MUSIC_BRANCH}/`;
-
-const AUDIO_EXTS = [
-  'mp3','flac','wav','ogg','oga','m4a','aac',
-  'opus','webm','wma','aiff','aif','ape','wv','caf','alac'
-];
+const AUDIO_EXT = ['flac','mp3','wav','ogg','oga','m4a','aac','opus','webm','wma','aiff','aif','ape','wv','caf','alac'];
+const GITHUB_API = `https://api.github.com/repos/${MUSIC_REPO}/contents/?ref=${MUSIC_BRANCH}`;
+const JSDELIVR_DIR = `https://cdn.jsdelivr.net/gh/${MUSIC_REPO}@${MUSIC_BRANCH}/`;
 
 // ===== STATE =====
 let tracks = [];
@@ -28,7 +24,6 @@ const DOM = {
   timeTotal: document.getElementById('time-total'),
   progressBar: document.getElementById('progress-bar'),
   progressFill: document.getElementById('progress-fill'),
-  progressGlow: document.getElementById('progress-glow'),
   btnPlay: document.getElementById('btn-play'),
   iconPlay: document.getElementById('icon-play'),
   btnPrev: document.getElementById('btn-prev'),
@@ -41,6 +36,37 @@ const DOM = {
   volumeBar: document.getElementById('volume-bar'),
   volumeFill: document.getElementById('volume-fill'),
 };
+
+// ===== UTILS =====
+function isAudioFile(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  return AUDIO_EXT.includes(ext);
+}
+
+function buildUrl(path) {
+  return `${JSDELIVR_DIR}${path}`;
+}
+
+function parseName(file) {
+  const base = file.replace(/\.[^.]+$/, '');
+  const parts = base.split('-').map(s => s.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    return { title: parts[0], artist: parts.slice(1).join(' / ') };
+  }
+  return { title: base, artist: 'Unknown' };
+}
+
+function formatTime(s) {
+  if (isNaN(s)) return '0:00';
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2, '0')}`;
+}
+
+function escapeHtml(text) {
+  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+  return text.replace(/[&<>"']/g, c => map[c]);
+}
 
 // ===== AUDIO INIT =====
 function initAudio() {
@@ -92,47 +118,83 @@ function onAudioError(e) {
   setTimeout(playNext, 1500);
 }
 
-// ===== SCAN MUSIC LIBRARY (PURE AUTO) =====
+// ===== SCAN: 3-LAYER FALLBACK =====
 async function scanMusicLibrary() {
   DOM.statusText.textContent = 'Scanning music library...';
+
+  // --- Layer 1: GitHub API ---
   try {
-    const res = await fetch(JSDLIST_URL);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const files = await res.json();
-
-    const audioFiles = files.filter(f => {
-      if (!f.name) return false;
-      const ext = f.name.split('.').pop().toLowerCase();
-      return AUDIO_EXTS.includes(ext);
-    });
-
-    if (audioFiles.length === 0) {
-      DOM.statusText.textContent = 'No audio files found. Upload music to the music repo.';
-      return;
-    }
-
-    tracks = audioFiles.map((f, i) => {
-      const nameWithoutExt = f.name.replace(/\.[^.]+$/, '');
-      return {
-        title: nameWithoutExt,
-        artist: 'Unknown',
-        file: f.name,
-        src: `${CDN_BASE}/${encodeURIComponent(f.name)}`
-      };
-    });
-
-    renderLibrary();
-    DOM.statusText.textContent = `${tracks.length} tracks loaded`;
-    DOM.trackCount.textContent = `${tracks.length} tracks`;
-
-    // Auto-play first track
-    if (tracks.length > 0) {
-      playTrack(0);
+    const res = await fetch(GITHUB_API, { headers: { 'Accept': 'application/vnd.github+json' } });
+    if (res.ok) {
+      const data = await res.json();
+      const files = data.filter(f => f.type === 'file' && isAudioFile(f.name));
+      if (files.length > 0) {
+        tracks = files.map(f => ({
+          file: f.name,
+          src: buildUrl(f.name),
+          ...parseName(f.name)
+        }));
+        renderLibrary();
+        DOM.statusText.textContent = `${tracks.length} tracks (GitHub API)`;
+        DOM.trackCount.textContent = `${tracks.length} tracks`;
+        if (tracks.length > 0) playTrack(0);
+        return;
+      }
     }
   } catch (e) {
-    console.error('Scan failed:', e);
-    DOM.statusText.textContent = 'Failed to scan. Check music repo & jsDelivr.';
+    console.warn('Layer 1 (GitHub API) failed:', e);
   }
+
+  // --- Layer 2: jsDelivr directory ---
+  try {
+    const res = await fetch(JSDELIVR_DIR);
+    if (res.ok) {
+      const html = await res.text();
+      const matches = [...html.matchAll(/href="([^"/]+\.[^"/]+)"/g)].map(m => m[1]);
+      const files = matches.filter(isAudioFile);
+      if (files.length > 0) {
+        tracks = files.map(name => ({
+          file: name,
+          src: buildUrl(name),
+          ...parseName(name)
+        }));
+        renderLibrary();
+        DOM.statusText.textContent = `${tracks.length} tracks (jsDelivr)`;
+        DOM.trackCount.textContent = `${tracks.length} tracks`;
+        if (tracks.length > 0) playTrack(0);
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('Layer 2 (jsDelivr) failed:', e);
+  }
+
+  // --- Layer 3: manifest.json ---
+  try {
+    const res = await fetch(buildUrl('manifest.json'));
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        tracks = data.map(item => ({
+          file: item.file,
+          src: buildUrl(item.file),
+          title: item.title || item.file.replace(/\.[^.]+$/, ''),
+          artist: item.artist || 'Unknown'
+        }));
+        renderLibrary();
+        DOM.statusText.textContent = `${tracks.length} tracks (manifest)`;
+        DOM.trackCount.textContent = `${tracks.length} tracks`;
+        if (tracks.length > 0) playTrack(0);
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('Layer 3 (manifest) failed:', e);
+  }
+
+  // --- All failed ---
+  DOM.statusText.textContent = 'No tracks found. Upload music to the music repo.';
+  DOM.trackCount.textContent = '0 tracks';
 }
 
 // ===== RENDER =====
@@ -155,14 +217,12 @@ function renderLibrary() {
   });
 }
 
-function escapeHtml(text) {
-  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-  return text.replace(/[&<>"']/g, c => map[c]);
-}
-
 // ===== PLAYBACK =====
 function playTrack(index) {
   if (index < 0 || index >= tracks.length) return;
+  initAudio();
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+
   currentIndex = index;
   const track = tracks[currentIndex];
 
@@ -195,7 +255,7 @@ function playNext() {
 
 function playPrev() {
   if (tracks.length === 0) return;
-  if (audio.currentTime > 3) {
+  if (audio && audio.currentTime > 3) {
     audio.currentTime = 0;
     return;
   }
@@ -213,6 +273,7 @@ function updatePlayBtn() {
 
 DOM.btnPlay.addEventListener('click', () => {
   initAudio();
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
   if (currentIndex < 0 && tracks.length > 0) { playTrack(0); return; }
   if (isPlaying) { audio.pause(); }
   else { audio.play().catch(() => { DOM.statusText.textContent = 'Tap to unlock audio'; }); }
@@ -273,14 +334,6 @@ window.addEventListener('online', () => {
 window.addEventListener('offline', () => {
   DOM.statusText.textContent = 'Offline';
 });
-
-// ===== UTILS =====
-function formatTime(s) {
-  if (isNaN(s)) return '0:00';
-  const m = Math.floor(s / 60);
-  const sec = Math.floor(s % 60);
-  return `${m}:${sec.toString().padStart(2, '0')}`;
-}
 
 // ===== START =====
 scanMusicLibrary();
